@@ -1,0 +1,6 @@
+github.com/dumacp/go-logs v0.0.0-20211122205852-dfcc5685457f h1:+ezKqLaH1EecXOSsz/sLS8CzrsXkNi5jmI7Q1DUOWBQ=
+github.com/dumacp/go-logs v0.0.0-20211122205852-dfcc5685457f/go.mod h1:dr8qC0qs36jLZFMZH/sRp3fc980yzZDCb/MkR/rHOSA=
+github.com/goburrow/modbus v0.1.0 h1:DejRZY73nEM6+bt5JSP6IsFolJ9dVcqxsYbpLbeW/ro=
+github.com/goburrow/modbus v0.1.0/go.mod h1:Kx552D5rLIS8E7TyUwQ/UdHEqvX5T8tyiGBTlzMcZBg=
+github.com/goburrow/serial v0.1.0 h1:v2T1SQa/dlUqQiYIT8+Cu7YolfqAi3K96UmhwYyuSrA=
+github.com/goburrow/serial v0.1.0/go.mod h1:sAiqG0nRVswsm1C97xsttiYCzSLBmUZ/VSlVLZJ8haA=
