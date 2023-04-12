@@ -32,12 +32,23 @@ func NewDeviceWithID(port string, speedBaud int, id int) (Device, error) {
 	handler.Parity = "N"
 	handler.StopBits = 1
 	handler.SlaveId = byte(id)
-	handler.Timeout = 3 * time.Second
+	handler.Timeout = 600 * time.Millisecond
 	// handler.IdleTimeout = 10 * time.Millisecond
 
 	if err := handler.Connect(); err != nil {
 		return nil, err
 	}
+
+	if dev.quit != nil {
+		select {
+		case <-dev.quit:
+		default:
+			close(dev.quit)
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+
+	dev.quit = make(chan int)
 
 	dev.handler = handler
 
@@ -45,13 +56,13 @@ func NewDeviceWithID(port string, speedBaud int, id int) (Device, error) {
 
 	dev.client = client
 
-	dev.quit = make(chan int)
+	// dev.quit = make(chan int)
 
 	return dev, nil
 
 }
 
-func (dev *device) Close() {
+func (dev *device) Close() error {
 	if dev.quit != nil {
 		select {
 		case _, ok := <-dev.quit:
@@ -61,8 +72,9 @@ func (dev *device) Close() {
 		default:
 			close(dev.quit)
 		}
+		// time.Sleep(600 * time.Millisecond)
 	}
-	dev.handler.Close()
+	return dev.handler.Close()
 }
 
 func (dev *device) SetSlaveID(id int) {
@@ -73,8 +85,13 @@ func (dev *device) Conf() Conf {
 	return dev.conf
 }
 
+func (dev *device) ReadTimeout() time.Duration {
+	return dev.handler.Timeout
+}
+
 type Device interface {
 	SetSlaveID(id int)
+	ReadTimeout() time.Duration
 	ListenButtons() chan *Button
 	ListenInputs() chan *Register
 	WriteRegister(addr int, value []uint16) error
@@ -84,5 +101,5 @@ type Device interface {
 	AddInput(addr, length int) error
 	Conf() Conf
 	SetIndicator(addr int, value bool) error
-	Close()
+	Close() error
 }

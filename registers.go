@@ -4,8 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"time"
-
-	"github.com/dumacp/go-logs/pkg/logs"
 )
 
 type Register struct {
@@ -32,13 +30,25 @@ func (m *device) AddInput(addr, length int) error {
 
 func (m *device) ListenInputs() chan *Register {
 
-	ch := make(chan *Register, 0)
+	ch := make(chan *Register)
+
+	// if m.quit != nil {
+	// 	select {
+	// 	case <-m.quit:
+	// 	default:
+	// 		close(m.quit)
+	// 		time.Sleep(10 * time.Millisecond)
+	// 	}
+	// }
+
+	// m.quit = make(chan int)
 
 	go func() {
 
 		defer close(ch)
+		defer fmt.Println("stop listenInputs")
 
-		t1 := time.NewTicker(100 * time.Millisecond)
+		t1 := time.NewTicker(300 * time.Millisecond)
 		defer t1.Stop()
 
 		for {
@@ -60,7 +70,7 @@ func (m *device) ListenInputs() chan *Register {
 					}
 					return nil
 				}(); err != nil {
-					logs.LogError.Println(err)
+					fmt.Printf("error listenInputs = %s", err)
 					continue
 				}
 
@@ -90,6 +100,7 @@ func (m *device) ListenInputs() chan *Register {
 				}
 			}
 		}
+
 	}()
 
 	return ch
@@ -99,13 +110,30 @@ func (m *device) WriteRegister(addr int, value []uint16) error {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 
+	fmt.Printf("WriteRegister (addr: %d, len: %d): [%X]\n", addr, len(value), value)
 	valueBytes := DecodeToBytes(value)
 
-	_, err := m.client.WriteMultipleRegisters(
-		uint16(addr), uint16(len(value)), valueBytes)
-	if err != nil {
-		return err
+	data := make([][]byte, 0)
+
+	n := len(valueBytes) / 120
+	for i := range make([]int, n+1) {
+		if len(valueBytes) > (i+1)*120 {
+			data = append(data, valueBytes[i*120:120*(i+1)])
+		} else {
+			data = append(data, valueBytes[i*120:])
+			break
+		}
 	}
+
+	for i, v := range data {
+		fmt.Printf("data: %X\n", v)
+		_, err := m.client.WriteMultipleRegisters(
+			uint16(addr+(i*120/2)), uint16(len(v)/2), v)
+		if err != nil {
+			return err
+		}
+	}
+	fmt.Printf("WriteRegister (addr: %d, len: %d): [%X]\n", addr, len(value), value)
 
 	return nil
 }

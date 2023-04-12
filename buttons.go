@@ -2,9 +2,8 @@ package levis
 
 import (
 	"fmt"
+	"runtime/debug"
 	"time"
-
-	"github.com/dumacp/go-logs/pkg/logs"
 )
 
 type Button struct {
@@ -34,8 +33,14 @@ func (m *device) ListenButtons() chan *Button {
 	ch := make(chan *Button)
 
 	go func() {
-
-		defer close(ch)
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("Recovered in \"listenButtons()\", ", r)
+				fmt.Println("stacktrace from panic: \n" + string(debug.Stack()))
+			}
+			fmt.Println("stop listenButtons")
+			close(ch)
+		}()
 
 		t1 := time.NewTicker(100 * time.Millisecond)
 		defer t1.Stop()
@@ -52,6 +57,11 @@ func (m *device) ListenButtons() chan *Button {
 
 					m.mux.Lock()
 					defer m.mux.Unlock()
+					select {
+					case <-m.quit:
+						return nil, nil
+					default:
+					}
 
 					res, err := m.client.ReadCoils(
 						uint16(m.conf.buttons_start), uint16(m.conf.buttons_end-m.conf.buttons_start+1))
@@ -59,10 +69,10 @@ func (m *device) ListenButtons() chan *Button {
 						return nil, err
 					}
 
-					fmt.Printf("regs: %v\n", regs)
+					// fmt.Printf("regs: %v\n", regs)
 					return res, nil
 				}(); err != nil {
-					logs.LogError.Println(err)
+					fmt.Printf("error ListenButtons = %s", err)
 					continue
 
 				} else {
@@ -78,7 +88,7 @@ func (m *device) ListenButtons() chan *Button {
 					}
 				}
 
-				fmt.Printf("regsButtons: %v\n", regsButtons)
+				//fmt.Printf("regsButtons: %v\n", regsButtons)
 
 				for k, v := range buttons {
 					if v != regsButtons[k] {
@@ -92,6 +102,7 @@ func (m *device) ListenButtons() chan *Button {
 				}
 			}
 		}
+
 	}()
 
 	return ch

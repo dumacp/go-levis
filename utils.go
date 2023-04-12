@@ -3,7 +3,6 @@ package levis
 import (
 	"encoding/binary"
 	"fmt"
-	"log"
 )
 
 func Equal(a, b []uint16) bool {
@@ -27,7 +26,7 @@ func DecodeToBytes(s []uint16) []byte {
 		result = append(result, byte(v&0xFF))
 	}
 
-	fmt.Printf("debug: %s, [% X]\n", result, result)
+	fmt.Printf("debug DecodeToBytes: %s, [% X]\n", result, result)
 	return result
 }
 
@@ -40,7 +39,7 @@ func DecodeToChars(s []uint16) []byte {
 		result = append(result, byte(v>>8&0xFF))
 	}
 
-	fmt.Printf("debug: %s, [% X]\n", result, result)
+	fmt.Printf("debug DecodeToChars: %s, [% X]\n", result, result)
 	return result
 }
 
@@ -62,7 +61,7 @@ func EncodeFromChars(s []byte) []uint16 {
 		result = append(result, binary.LittleEndian.Uint16(value))
 	}
 
-	log.Printf("debug: %v", result)
+	fmt.Printf("debug EncodeFromChars: %v\n", result)
 	return result
 }
 
@@ -84,7 +83,7 @@ func EncodeFromBytes(s []byte) []uint16 {
 		result = append(result, binary.BigEndian.Uint16(value))
 	}
 
-	log.Printf("debug: %v", result)
+	fmt.Printf("debug EncodeFromBytes: %v\n", result)
 	return result
 }
 
@@ -110,8 +109,35 @@ func EncodeToChars(s []byte) []byte {
 		copyS = copyS[2:]
 	}
 
-	// fmt.Printf("debug: %s, [% X]\n", result, result)
-
+	fmt.Printf("debug EncodeToChars: %v\n", result)
 	return result
 
+}
+
+func GenerateMessage(slaveId int, funcCode int, data []byte) []byte {
+
+	adu := make([]byte, 0x00)
+
+	adu = append(adu, byte(slaveId))
+	adu = append(adu, byte(funcCode))
+	adu = append(adu, byte(len(data)))
+	adu = append(adu, data...)
+
+	crcc := new(crc)
+	crcc.reset().pushBytes(adu)
+	checksum := crcc.value()
+
+	fmt.Printf("encode crc: %X\n", checksum)
+
+	adu = append(adu, byte(checksum))
+	adu = append(adu, byte(checksum>>8))
+
+	length := len(adu)
+
+	crcc.reset().pushBytes(adu[0 : length-2])
+	checksum_ := uint16(adu[length-1])<<8 | uint16(adu[length-2])
+
+	fmt.Printf("decode crc: %X\n", checksum_)
+
+	return adu
 }
