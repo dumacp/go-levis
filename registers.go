@@ -1,6 +1,7 @@
 package levis
 
 import (
+	"context"
 	"encoding/binary"
 	"fmt"
 	"time"
@@ -28,22 +29,17 @@ func (m *device) AddInput(addr, length int) error {
 	return nil
 }
 
-func (m *device) ListenInputs() chan *Register {
+func (m *device) ListenInputsWithContext(ctx context.Context) chan *Register {
 
 	ch := make(chan *Register)
 
-	// if m.quit != nil {
-	// 	select {
-	// 	case <-m.quit:
-	// 	default:
-	// 		close(m.quit)
-	// 		time.Sleep(10 * time.Millisecond)
-	// 	}
-	// }
-
-	// m.quit = make(chan int)
-
 	go func() {
+
+		if ctx == nil {
+			var cancel func()
+			ctx, cancel = context.WithCancel(context.TODO())
+			defer cancel()
+		}
 
 		defer close(ch)
 		defer fmt.Println("stop listenInputs")
@@ -54,7 +50,9 @@ func (m *device) ListenInputs() chan *Register {
 		for {
 
 			select {
-			case <-m.quit:
+			case <-ctx.Done():
+				return
+			case <-m.contxt.Done():
 				return
 			case <-t1.C:
 				var regs []byte
@@ -104,6 +102,11 @@ func (m *device) ListenInputs() chan *Register {
 	}()
 
 	return ch
+}
+
+func (m *device) ListenInputs() chan *Register {
+
+	return m.ListenInputsWithContext(nil)
 }
 
 func (m *device) WriteRegister(addr int, value []uint16) error {

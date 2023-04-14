@@ -1,6 +1,7 @@
 package levis
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -12,7 +13,8 @@ type device struct {
 	client  modbus.Client
 	mux     sync.Mutex
 	handler *modbus.RTUClientHandler
-	quit    chan int
+	contxt  context.Context
+	cancel  func()
 }
 
 func NewDevice(port string, speedBaud int) (Device, error) {
@@ -39,16 +41,14 @@ func NewDeviceWithID(port string, speedBaud int, id int) (Device, error) {
 		return nil, err
 	}
 
-	if dev.quit != nil {
-		select {
-		case <-dev.quit:
-		default:
-			close(dev.quit)
-			time.Sleep(10 * time.Millisecond)
-		}
+	if dev.cancel != nil {
+		dev.cancel()
 	}
 
-	dev.quit = make(chan int)
+	ctx, cancel := context.WithCancel(context.TODO())
+
+	dev.contxt = ctx
+	dev.cancel = cancel
 
 	dev.handler = handler
 
@@ -63,16 +63,8 @@ func NewDeviceWithID(port string, speedBaud int, id int) (Device, error) {
 }
 
 func (dev *device) Close() error {
-	if dev.quit != nil {
-		select {
-		case _, ok := <-dev.quit:
-			if ok {
-				close(dev.quit)
-			}
-		default:
-			close(dev.quit)
-		}
-		// time.Sleep(600 * time.Millisecond)
+	if dev.cancel != nil {
+		dev.cancel()
 	}
 	return dev.handler.Close()
 }
@@ -93,7 +85,9 @@ type Device interface {
 	SetSlaveID(id int)
 	ReadTimeout() time.Duration
 	ListenButtons() chan *Button
+	ListenButtonsWithContext(ctx context.Context) chan *Button
 	ListenInputs() chan *Register
+	ListenInputsWithContext(ctx context.Context) chan *Register
 	WriteRegister(addr int, value []uint16) error
 	ReadRegister(addr, length int) ([]uint16, error)
 	ReadBytesRegister(addr, length int) ([]byte, error)

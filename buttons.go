@@ -1,6 +1,7 @@
 package levis
 
 import (
+	"context"
 	"fmt"
 	"runtime/debug"
 	"time"
@@ -28,7 +29,7 @@ func (m *device) AddButton(addr int) error {
 	return nil
 }
 
-func (m *device) ListenButtons() chan *Button {
+func (m *device) ListenButtonsWithContext(ctx context.Context) chan *Button {
 
 	ch := make(chan *Button)
 
@@ -42,13 +43,21 @@ func (m *device) ListenButtons() chan *Button {
 			close(ch)
 		}()
 
+		if ctx == nil {
+			var cancel func()
+			ctx, cancel = context.WithCancel(context.TODO())
+			defer cancel()
+		}
+
 		t1 := time.NewTicker(100 * time.Millisecond)
 		defer t1.Stop()
 
 		for {
 
 			select {
-			case <-m.quit:
+			case <-ctx.Done():
+				return
+			case <-m.contxt.Done():
 				return
 			case <-t1.C:
 
@@ -58,7 +67,7 @@ func (m *device) ListenButtons() chan *Button {
 					m.mux.Lock()
 					defer m.mux.Unlock()
 					select {
-					case <-m.quit:
+					case <-m.contxt.Done():
 						return nil, nil
 					default:
 					}
@@ -106,6 +115,11 @@ func (m *device) ListenButtons() chan *Button {
 	}()
 
 	return ch
+}
+
+func (m *device) ListenButtons() chan *Button {
+
+	return m.ListenButtonsWithContext(nil)
 }
 
 func (m *device) SetIndicator(addr int, value bool) error {
