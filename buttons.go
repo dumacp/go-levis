@@ -81,7 +81,7 @@ func (m *device) ListenButtonsWithContext(ctx context.Context) chan *Button {
 					// fmt.Printf("regs: %v\n", regs)
 					return res, nil
 				}(); err != nil {
-					fmt.Printf("error ListenButtons = %s", err)
+					fmt.Printf("error ListenButtons = %s (%T)", err, err)
 					continue
 
 				} else {
