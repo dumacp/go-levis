@@ -83,7 +83,7 @@ func (m *device) ListenInputsWithContext(ctx context.Context) chan *Register {
 					regsButtons = append(regsButtons, binary.BigEndian.Uint16(value))
 				}
 
-				fmt.Printf("regs uint16 inputs: %v\n", regsButtons)
+				// fmt.Printf("regs uint16 inputs: %v\n", regsButtons)
 
 				for k, v := range inputs {
 					if !Equal(v, regsButtons[k:k+len(v)]) {
@@ -113,7 +113,7 @@ func (m *device) WriteRegister(addr int, value []uint16) error {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 
-	fmt.Printf("WriteRegister (addr: %d, len: %d): [%X]\n", addr, len(value), value)
+	// fmt.Printf("WriteRegister (addr: %d, len: %d): [%X]\n", addr, len(value), value)
 	valueBytes := DecodeToBytes(value)
 
 	data := make([][]byte, 0)

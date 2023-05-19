@@ -26,7 +26,7 @@ func DecodeToBytes(s []uint16) []byte {
 		result = append(result, byte(v&0xFF))
 	}
 
-	fmt.Printf("debug DecodeToBytes: %s, [% X]\n", result, result)
+	// fmt.Printf("debug DecodeToBytes: %s, [% X]\n", result, result)
 	return result
 }
 
@@ -39,7 +39,7 @@ func DecodeToChars(s []uint16) []byte {
 		result = append(result, byte(v>>8&0xFF))
 	}
 
-	fmt.Printf("debug DecodeToChars: %s, [% X]\n", result, result)
+	// fmt.Printf("debug DecodeToChars: %s, [% X]\n", result, result)
 	return result
 }
 
@@ -61,7 +61,7 @@ func EncodeFromChars(s []byte) []uint16 {
 		result = append(result, binary.LittleEndian.Uint16(value))
 	}
 
-	fmt.Printf("debug EncodeFromChars: %v\n", result)
+	fmt.Printf("debug EncodeFromChars: [% X], [% X]\n", result, copyS)
 	return result
 }
 
@@ -80,10 +80,10 @@ func EncodeFromBytes(s []byte) []uint16 {
 	for i := range make([]int, len(copyS)/2) {
 		idx := 2 * i
 		value := []byte{copyS[idx], copyS[idx+1]}
-		result = append(result, binary.BigEndian.Uint16(value))
+		result = append(result, binary.LittleEndian.Uint16(value))
 	}
 
-	fmt.Printf("debug EncodeFromBytes: %v\n", result)
+	fmt.Printf("debug EncodeFromBytes: [% X], [% X]\n", result, copyS)
 	return result
 }
 
@@ -109,7 +109,7 @@ func EncodeToChars(s []byte) []byte {
 		copyS = copyS[2:]
 	}
 
-	fmt.Printf("debug EncodeToChars: %v\n", result)
+	// fmt.Printf("debug EncodeToChars: %v\n", result)
 	return result
 
 }
@@ -127,7 +127,7 @@ func GenerateMessage(slaveId int, funcCode int, data []byte) []byte {
 	crcc.reset().pushBytes(adu)
 	checksum := crcc.value()
 
-	fmt.Printf("encode crc: %X\n", checksum)
+	// fmt.Printf("encode crc: %X\n", checksum)
 
 	adu = append(adu, byte(checksum))
 	adu = append(adu, byte(checksum>>8))

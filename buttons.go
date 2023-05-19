@@ -126,6 +126,7 @@ func (m *device) SetIndicator(addr int, value bool) error {
 
 	m.mux.Lock()
 	defer m.mux.Unlock()
+	fmt.Printf("SetIndicator (addr: %d): [%v]\n", addr, value)
 
 	val := uint16(0x0000)
 	if value {
@@ -134,6 +135,7 @@ func (m *device) SetIndicator(addr int, value bool) error {
 	if _, err := m.client.WriteSingleCoil(uint16(addr), val); err != nil {
 		return err
 	}
+	fmt.Printf("SetIndicator (addr: %d): [%v]\n", addr, value)
 
 	return nil
 }
