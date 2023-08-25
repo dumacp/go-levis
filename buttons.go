@@ -126,7 +126,7 @@ func (m *device) SetIndicator(addr int, value bool) error {
 
 	m.mux.Lock()
 	defer m.mux.Unlock()
-	fmt.Printf("SetIndicator (addr: %d): [%v]\n", addr, value)
+	// fmt.Printf("SetIndicator (addr: %d): [%v]\n", addr, value)
 
 	val := uint16(0x0000)
 	if value {
