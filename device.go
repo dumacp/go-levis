@@ -86,6 +86,7 @@ type Device interface {
 	ReadTimeout() time.Duration
 	ListenButtons() chan *Button
 	ListenButtonsWithContext(ctx context.Context) chan *Button
+	ListenButtonsWithContext2(ctx context.Context) (chan *Button, chan error)
 	ListenInputs() chan *Register
 	ListenInputsWithContext(ctx context.Context) chan *Register
 	WriteRegister(addr int, value []uint16) error

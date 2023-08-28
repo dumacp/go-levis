@@ -117,6 +117,100 @@ func (m *device) ListenButtonsWithContext(ctx context.Context) chan *Button {
 	return ch
 }
 
+func (m *device) ListenButtonsWithContext2(ctx context.Context) (chan *Button, chan error) {
+
+	ch := make(chan *Button)
+	chErr := make(chan error)
+
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("Recovered in \"listenButtons()\", ", r)
+				fmt.Println("stacktrace from panic: \n" + string(debug.Stack()))
+			}
+			fmt.Println("stop listenButtons")
+			close(ch)
+			close(chErr)
+		}()
+
+		if ctx == nil {
+			var cancel func()
+			ctx, cancel = context.WithCancel(context.TODO())
+			defer cancel()
+		}
+
+		t1 := time.NewTicker(100 * time.Millisecond)
+		defer t1.Stop()
+
+		for {
+
+			select {
+			case <-ctx.Done():
+				return
+			case <-m.contxt.Done():
+				return
+			case <-t1.C:
+
+				var regs []byte
+				if v, err := func() ([]byte, error) {
+
+					m.mux.Lock()
+					defer m.mux.Unlock()
+					select {
+					case <-m.contxt.Done():
+						return nil, nil
+					default:
+					}
+
+					res, err := m.client.ReadCoils(
+						uint16(m.conf.buttons_start), uint16(m.conf.buttons_end-m.conf.buttons_start+1))
+					if err != nil {
+						return nil, err
+					}
+
+					// fmt.Printf("regs: %v\n", regs)
+					return res, nil
+				}(); err != nil {
+					select {
+					case chErr <- fmt.Errorf("error ListenButtons = %s (%T)", err, err):
+					case <-time.After(100 * time.Millisecond):
+					}
+
+					continue
+
+				} else {
+					regs = v
+				}
+
+				regsButtons := make([]int, 0)
+
+				for i := range regs {
+
+					for j := range make([]int, 8) {
+						regsButtons = append(regsButtons, int((regs[i]>>(j))&0x01))
+					}
+				}
+
+				//fmt.Printf("regsButtons: %v\n", regsButtons)
+
+				for k, v := range buttons {
+					if v != regsButtons[k] {
+						select {
+						case ch <- &Button{Addr: k, Value: regsButtons[k]}:
+						case <-time.After(100 * time.Millisecond):
+						}
+
+						buttons[k] = regsButtons[k]
+					}
+				}
+			}
+		}
+
+	}()
+
+	return ch, chErr
+}
+
 func (m *device) ListenButtons() chan *Button {
 
 	return m.ListenButtonsWithContext(nil)
