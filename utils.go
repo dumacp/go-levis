@@ -61,7 +61,7 @@ func EncodeFromChars(s []byte) []uint16 {
 		result = append(result, binary.LittleEndian.Uint16(value))
 	}
 
-	fmt.Printf("debug EncodeFromChars: [% X], [% X]\n", result, copyS)
+	// fmt.Printf("debug EncodeFromChars: [% X], [% X]\n", result, copyS)
 	return result
 }
 
@@ -83,7 +83,7 @@ func EncodeFromBytes(s []byte) []uint16 {
 		result = append(result, binary.LittleEndian.Uint16(value))
 	}
 
-	fmt.Printf("debug EncodeFromBytes: [% X], [% X]\n", result, copyS)
+	// fmt.Printf("debug EncodeFromBytes: [% X], [% X]\n", result, copyS)
 	return result
 }
 

@@ -113,30 +113,32 @@ func (m *device) WriteRegister(addr int, value []uint16) error {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 
-	// fmt.Printf("WriteRegister (addr: %d, len: %d): [%X]\n", addr, len(value), value)
+	// fmt.Printf("WriteRegister (addr: %d, len: %d): %q\n", addr, len(value), value)
 	valueBytes := DecodeToBytes(value)
 
 	data := make([][]byte, 0)
 
-	n := len(valueBytes) / 120
+	max := 240
+	n := len(valueBytes) / max
 	for i := range make([]int, n+1) {
-		if len(valueBytes) > (i+1)*120 {
-			data = append(data, valueBytes[i*120:120*(i+1)])
+		if len(valueBytes) > (i+1)*max {
+			data = append(data, valueBytes[i*max:max*(i+1)])
 		} else {
-			data = append(data, valueBytes[i*120:])
+			data = append(data, valueBytes[i*max:])
 			break
 		}
 	}
 
 	for i, v := range data {
-		fmt.Printf("data: %X\n", v)
+		// fmt.Printf("data: %X\n", v)
 		_, err := m.client.WriteMultipleRegisters(
-			uint16(addr+(i*120/2)), uint16(len(v)/2), v)
+			uint16(addr+(i*max)), uint16(len(v)/2), v)
+		// fmt.Printf("WriteRegister (%d) (addr: %d, len: %d): [%X]\n", i, addr+(i*max), len(v), v)
 		if err != nil {
 			return err
 		}
 	}
-	fmt.Printf("WriteRegister (addr: %d, len: %d): [%X]\n", addr, len(value), value)
+	// fmt.Printf("final WriteRegister (addr: %d, len: %d): [%X]\n", addr, len(value), value)
 
 	return nil
 }

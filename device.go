@@ -14,6 +14,7 @@ type device struct {
 	mux     sync.Mutex
 	handler *modbus.RTUClientHandler
 	contxt  context.Context
+	buttons map[int]int
 	cancel  func()
 }
 

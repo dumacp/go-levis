@@ -12,7 +12,7 @@ type Button struct {
 	Value int
 }
 
-var buttons map[int]int
+// var buttons map[int]int
 
 func (m *device) AddButton(addr int) error {
 
@@ -21,10 +21,10 @@ func (m *device) AddButton(addr int) error {
 			addr, m.conf.buttons_start, m.conf.buttons_end)
 	}
 
-	if len(buttons) <= 0 {
-		buttons = make(map[int]int)
+	if len(m.buttons) <= 0 {
+		m.buttons = make(map[int]int)
 	}
-	buttons[addr] = 0x00
+	m.buttons[addr] = 0x00
 
 	return nil
 }
@@ -99,14 +99,14 @@ func (m *device) ListenButtonsWithContext(ctx context.Context) chan *Button {
 
 				//fmt.Printf("regsButtons: %v\n", regsButtons)
 
-				for k, v := range buttons {
+				for k, v := range m.buttons {
 					if v != regsButtons[k] {
 						select {
 						case ch <- &Button{Addr: k, Value: regsButtons[k]}:
 						case <-time.After(100 * time.Millisecond):
 						}
 
-						buttons[k] = regsButtons[k]
+						m.buttons[k] = regsButtons[k]
 					}
 				}
 			}
@@ -193,14 +193,14 @@ func (m *device) ListenButtonsWithContext2(ctx context.Context) (chan *Button, c
 
 				//fmt.Printf("regsButtons: %v\n", regsButtons)
 
-				for k, v := range buttons {
+				for k, v := range m.buttons {
 					if v != regsButtons[k] {
 						select {
 						case ch <- &Button{Addr: k, Value: regsButtons[k]}:
 						case <-time.After(100 * time.Millisecond):
 						}
 
-						buttons[k] = regsButtons[k]
+						m.buttons[k] = regsButtons[k]
 					}
 				}
 			}
